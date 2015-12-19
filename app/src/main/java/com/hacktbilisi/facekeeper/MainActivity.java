@@ -1,7 +1,5 @@
 package com.hacktbilisi.facekeeper;
 
-import com.hacktbilisi.facekeeper.FaceKeeperCameraView;
-
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
@@ -9,12 +7,9 @@ import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
-import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
-import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
-import org.opencv.android.JavaCameraView;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -25,7 +20,6 @@ import android.util.Log;
 import android.view.MenuItem;
 import android.view.SurfaceView;
 import android.view.View;
-import android.view.Window;
 import android.view.WindowManager;
 
 import static com.hacktbilisi.facekeeper.R.id.fab;
@@ -65,6 +59,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
     public void onCreate(Bundle savedInstanceState) {
         Log.i(TAG, "called onCreate");
         super.onCreate(savedInstanceState);
+
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         setContentView(R.layout.activity_main);
@@ -75,6 +70,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
 
         mOpenCvCameraView.setCvCameraViewListener(this);
+
         int w = mOpenCvCameraView.getWidth();
         int h = mOpenCvCameraView.getHeight();
         Log.d(TAG, "width=" + w + ", height=" + h + ".");

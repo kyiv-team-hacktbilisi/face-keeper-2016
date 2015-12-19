@@ -27,6 +27,7 @@ import org.opencv.core.Mat;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -64,17 +65,28 @@ public class FaceKeeperCameraView extends JavaCameraView {
     private Thread mThread;
     private boolean mStopThread;
 
+    private SurfaceHolder mHolder;
     protected Camera mCamera;
     protected JavaCameraFrame[] mCameraFrame;
     private SurfaceTexture mSurfaceTexture;
 
+    public FaceKeeperCameraView(Context context) {
+        this(context, CAMERA_ID_ANY);
+    }
+
     public FaceKeeperCameraView(Context context, int cameraId) {
         super(context, cameraId);
         mCameraIndex = cameraId;
-        getHolder().addCallback(this);
+
+        mHolder = getHolder();
+        mHolder.addCallback(this);
+        // deprecated setting, but required on Android versions prior to 3.0
+        mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+
         mMaxWidth = MAX_UNSPECIFIED;
         mMaxHeight = MAX_UNSPECIFIED;
     }
+
     public FaceKeeperCameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
 
@@ -290,6 +302,7 @@ public class FaceKeeperCameraView extends JavaCameraView {
 
                     mCamera.setParameters(params);
                     params = mCamera.getParameters();
+                    Log.d(TAG, "params=" + params.toString());
 
                     mFrameWidth = params.getPreviewSize().width;
                     mFrameHeight = params.getPreviewSize().height;
@@ -535,7 +548,30 @@ public class FaceKeeperCameraView extends JavaCameraView {
         private CvCameraViewListener mOldStyleListener;
     }
 
-    public void surfaceChanged(SurfaceHolder arg0, int arg1, int arg2, int arg3) {
+    public void surfaceCreated(SurfaceHolder holder) {
+        /* Do nothing. Wait until surfaceChanged delivered */
+    }
+
+    public void surfaceChanged(SurfaceHolder holder, int arg1, int arg2, int arg3) {
+        // stop preview before making changes
+        try {
+            mCamera.stopPreview();
+        } catch (Exception e){
+            // ignore: tried to stop a non-existent preview
+        }
+
+        // set preview size and make any resize, rotate or
+        // reformatting changes here
+
+        // start preview with new settings
+        try {
+            mCamera.setPreviewDisplay(mHolder);
+            mCamera.startPreview();
+
+        } catch (Exception e){
+            Log.d(TAG, "Error starting camera preview: " + e.getMessage());
+        }
+
         Log.d(TAG, "call surfaceChanged event");
         synchronized(mSyncObject) {
             if (!mSurfaceExist) {
