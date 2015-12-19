@@ -17,12 +17,18 @@ import org.opencv.imgproc.Imgproc;
 import org.opencv.android.JavaCameraView;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.SurfaceView;
+import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+
+import static com.hacktbilisi.facekeeper.R.id.fab;
 
 public class MainActivity extends Activity implements CvCameraViewListener2 {
     private static final String TAG = "OCVSample::Activity";
@@ -30,7 +36,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
     private FaceKeeperCameraView mOpenCvCameraView;
     private boolean              mIsJavaCamera = true;
     private MenuItem             mItemSwitchCamera = null;
-
+    private RecyclerView rv;
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
         public void onManagerConnected(int status) {
@@ -62,6 +68,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         setContentView(R.layout.activity_main);
+        rv = (RecyclerView)findViewById(R.id.rv);
 
         mOpenCvCameraView = (FaceKeeperCameraView) findViewById(R.id.tutorial1_activity_java_surface_view);
 
@@ -72,6 +79,16 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
         int h = mOpenCvCameraView.getHeight();
         Log.d(TAG, "width=" + w + ", height=" + h + ".");
 //        mOpenCvCameraView.disconnectCamera();
+
+        FloatingActionButton btn = (FloatingActionButton) findViewById(R.id.fab);
+        btn.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, ShowNotesActivity.class);
+                startActivity(intent);
+            }
+        });
     }
 
     @Override
