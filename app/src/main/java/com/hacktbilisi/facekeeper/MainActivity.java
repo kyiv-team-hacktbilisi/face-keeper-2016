@@ -115,7 +115,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
         Mat mRgbaT = mRgba.t();
         Core.transpose(mRgba, mRgbaT);
         Imgproc.resize(mRgbaT, mRgbaT, mRgba.size());
-        Core.flip(mRgba, mRgba, 1);
+        Core.flip(mRgbaT, mRgbaT, 1);
 
         return mRgbaT;
     }

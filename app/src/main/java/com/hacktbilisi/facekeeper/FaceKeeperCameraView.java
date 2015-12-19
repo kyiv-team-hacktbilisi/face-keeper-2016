@@ -21,6 +21,7 @@ import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.FpsMeter;
 import org.opencv.android.JavaCameraView;
 import org.opencv.android.Utils;
+import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Size;
@@ -33,6 +34,7 @@ import java.util.List;
  */
 public class FaceKeeperCameraView extends JavaCameraView {
 
+    private Mat mRotated;
     private static final String TAG = "FaceKeeperCameraView";
     private static final int MAX_UNSPECIFIED = -1;
     private static final int STOPPED = 0;
@@ -160,6 +162,12 @@ public class FaceKeeperCameraView extends JavaCameraView {
         public Mat rgba() {
             Imgproc.cvtColor(mYuvFrameData, mRgba, Imgproc.COLOR_YUV2RGBA_NV21, 4);
             return mRgba;
+//            Imgproc.cvtColor(mYuvFrameData, mRgba, Imgproc.COLOR_YUV2BGR_NV12, 4);
+//            if (mRotated != null)
+//                mRotated.release();
+//            mRotated = mRgba.t();
+//            Core.flip(mRotated, mRotated, -1);
+//            return mRotated;
         }
 
         public JavaCameraFrame(Mat Yuv420sp, int width, int height) {
