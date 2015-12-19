@@ -5,18 +5,20 @@ import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
+import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
+import org.opencv.core.Size;
+import org.opencv.imgproc.Imgproc;
 
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.SurfaceView;
+import android.view.Window;
 import android.view.WindowManager;
-import android.widget.Toast;
 
 public class MainActivity extends Activity implements CvCameraViewListener2 {
     private static final String TAG = "OCVSample::Activity";
@@ -29,8 +31,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
         @Override
         public void onManagerConnected(int status) {
             switch (status) {
-                case LoaderCallbackInterface.SUCCESS:
-                {
+                case LoaderCallbackInterface.SUCCESS: {
                     Log.i(TAG, "OpenCV loaded successfully");
                     mOpenCvCameraView.enableView();
                 } break;
@@ -90,12 +91,21 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
     }
 
     public void onCameraViewStarted(int width, int height) {
+
     }
 
     public void onCameraViewStopped() {
     }
 
+
+
     public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
-        return inputFrame.rgba();
+        Mat mRgba = inputFrame.rgba();
+        Mat mRgbaT = mRgba.t();
+        Core.transpose(mRgba, mRgbaT);
+        Imgproc.resize(mRgbaT, mRgbaT, mRgba.size());
+        Core.flip(mRgba, mRgba, 1);
+
+        return mRgbaT;
     }
 }
