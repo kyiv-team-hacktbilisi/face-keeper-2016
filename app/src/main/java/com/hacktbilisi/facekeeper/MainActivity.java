@@ -1,5 +1,7 @@
 package com.hacktbilisi.facekeeper;
 
+import com.hacktbilisi.facekeeper.FaceKeeperCameraView;
+
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
@@ -12,6 +14,8 @@ import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
+import org.opencv.android.JavaCameraView;
+
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
@@ -23,7 +27,7 @@ import android.view.WindowManager;
 public class MainActivity extends Activity implements CvCameraViewListener2 {
     private static final String TAG = "OCVSample::Activity";
 
-    private CameraBridgeViewBase mOpenCvCameraView;
+    private FaceKeeperCameraView mOpenCvCameraView;
     private boolean              mIsJavaCamera = true;
     private MenuItem             mItemSwitchCamera = null;
 
@@ -34,6 +38,9 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
                 case LoaderCallbackInterface.SUCCESS: {
                     Log.i(TAG, "OpenCV loaded successfully");
                     mOpenCvCameraView.enableView();
+                    int w = mOpenCvCameraView.getWidth();
+                    int h = mOpenCvCameraView.getHeight();
+                    Log.d(TAG, "[conn] width=" + w + ", height=" + h + ".");
                 } break;
                 default:
                 {
@@ -56,11 +63,15 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
 
         setContentView(R.layout.activity_main);
 
-        mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.tutorial1_activity_java_surface_view);
+        mOpenCvCameraView = (FaceKeeperCameraView) findViewById(R.id.tutorial1_activity_java_surface_view);
 
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
 
         mOpenCvCameraView.setCvCameraViewListener(this);
+        int w = mOpenCvCameraView.getWidth();
+        int h = mOpenCvCameraView.getHeight();
+        Log.d(TAG, "width=" + w + ", height=" + h + ".");
+//        mOpenCvCameraView.disconnectCamera();
     }
 
     @Override
