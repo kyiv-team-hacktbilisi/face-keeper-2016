@@ -70,6 +70,8 @@ public class FaceKeeperCameraView extends JavaCameraView {
     protected JavaCameraFrame[] mCameraFrame;
     private SurfaceTexture mSurfaceTexture;
 
+    private int displayOrientation = 0;
+
     public FaceKeeperCameraView(Context context) {
         this(context, CAMERA_ID_ANY);
     }
@@ -128,20 +130,37 @@ public class FaceKeeperCameraView extends JavaCameraView {
 
         int maxAllowedWidth = (mMaxWidth != MAX_UNSPECIFIED && mMaxWidth < surfaceWidth)? mMaxWidth : surfaceWidth;
         int maxAllowedHeight = (mMaxHeight != MAX_UNSPECIFIED && mMaxHeight < surfaceHeight)? mMaxHeight : surfaceHeight;
-        Log.d(TAG, "calculateCameraFrameSize maxAllowedWidth=" + maxAllowedWidth + ", maxAllowedHeight=" + maxAllowedHeight + ", surfaceWidth=" + surfaceWidth + ", surfaceHeight=" + surfaceHeight);
 
-        for (Object size : supportedSizes) {
-            int width = accessor.getWidth(size);
-            int height = accessor.getHeight(size);
+        if (displayOrientation == 90 || displayOrientation == 270) {
+            int _tmp = maxAllowedHeight;
+            maxAllowedHeight = maxAllowedWidth;
+            maxAllowedWidth = _tmp;
+            for (Object size : supportedSizes) {
+                int width = accessor.getWidth(size);
+                int height = accessor.getHeight(size);
 
-            if (width <= maxAllowedWidth && height <= maxAllowedHeight &&
-                width >= calcWidth && height >= calcHeight) {
-                calcWidth = (int) width;
-                calcHeight = (int) height;
+                if (width <= maxAllowedWidth && height <= maxAllowedHeight &&
+                        width >= calcWidth && height >= calcHeight) {
+                    calcWidth = (int) width;
+                    calcHeight = (int) height;
+                }
+            }
+        } else {
+            for (Object size : supportedSizes) {
+                int height = accessor.getWidth(size);
+                int width = accessor.getHeight(size);
+
+                if (width <= maxAllowedWidth && height <= maxAllowedHeight &&
+                        width >= calcWidth && height >= calcHeight) {
+                    calcWidth = (int) width;
+                    calcHeight = (int) height;
+                }
             }
         }
 
-        return new Size(calcWidth, calcHeight);
+        Log.d(TAG, "calculateCameraFrameSize maxAllowedWidth=" + maxAllowedWidth + ", maxAllowedHeight=" + maxAllowedHeight + ", surfaceWidth=" + surfaceWidth + ", surfaceHeight=" + surfaceHeight);
+
+        return (displayOrientation == 90 || displayOrientation == 270) ? new Size(calcWidth, calcHeight) : new Size(calcHeight, calcWidth);
     }
 
     protected void releaseCamera() {
@@ -304,12 +323,18 @@ public class FaceKeeperCameraView extends JavaCameraView {
                     params = mCamera.getParameters();
                     Log.d(TAG, "params=" + params.toString());
 
-                    mFrameWidth = params.getPreviewSize().width;
-                    mFrameHeight = params.getPreviewSize().height;
+                    if (displayOrientation == 90 || displayOrientation == 270) {
+                        mFrameWidth = params.getPreviewSize().width;
+                        mFrameHeight = params.getPreviewSize().height;
+                    } else {
+                        mFrameWidth = params.getPreviewSize().height;
+                        mFrameHeight = params.getPreviewSize().width;
+                    }
 
-                    if ((getLayoutParams().width == ViewGroup.LayoutParams.MATCH_PARENT) && (getLayoutParams().height == ViewGroup.LayoutParams.MATCH_PARENT))
-                        mScale = Math.min(((float)height)/mFrameHeight, ((float)width)/mFrameWidth);
-                    else
+                    if ((getLayoutParams().width == ViewGroup.LayoutParams.MATCH_PARENT) && (getLayoutParams().height == ViewGroup.LayoutParams.MATCH_PARENT)) {
+                        mScale = Math.min(((float) height) / mFrameHeight, ((float) width) / mFrameWidth);
+                        mScale = Math.max(((float) height) / mFrameHeight, ((float) width) / mFrameWidth);
+                    } else
                         mScale = 0;
 
                     if (mFpsMeter != null) {
@@ -330,8 +355,13 @@ public class FaceKeeperCameraView extends JavaCameraView {
                     AllocateCache();
 
                     mCameraFrame = new JavaCameraFrame[2];
-                    mCameraFrame[0] = new JavaCameraFrame(mFrameChain[0], mFrameWidth, mFrameHeight);
-                    mCameraFrame[1] = new JavaCameraFrame(mFrameChain[1], mFrameWidth, mFrameHeight);
+                    if (displayOrientation == 90 || displayOrientation == 270) {
+                        mCameraFrame[0] = new JavaCameraFrame(mFrameChain[0], mFrameWidth, mFrameHeight);
+                        mCameraFrame[1] = new JavaCameraFrame(mFrameChain[1], mFrameWidth, mFrameHeight);
+                    } else {
+                        mCameraFrame[0] = new JavaCameraFrame(mFrameChain[0], mFrameHeight, mFrameWidth);
+                        mCameraFrame[1] = new JavaCameraFrame(mFrameChain[1], mFrameHeight, mFrameWidth);
+                    }
 
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
                         mSurfaceTexture = new SurfaceTexture(MAGIC_TEXTURE_ID);

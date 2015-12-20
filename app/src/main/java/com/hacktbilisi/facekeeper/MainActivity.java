@@ -66,6 +66,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
         rv = (RecyclerView)findViewById(R.id.rv);
 
         mOpenCvCameraView = (FaceKeeperCameraView) findViewById(R.id.tutorial1_activity_java_surface_view);
+        mOpenCvCameraView.setMaxFrameSize(1080, 1875);
 
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
 
@@ -75,6 +76,7 @@ public class MainActivity extends Activity implements CvCameraViewListener2 {
         int h = mOpenCvCameraView.getHeight();
         Log.d(TAG, "width=" + w + ", height=" + h + ".");
 //        mOpenCvCameraView.disconnectCamera();
+//        mOpenCvCameraView.connectCamera(1080, 1875);
 
         FloatingActionButton btn = (FloatingActionButton) findViewById(R.id.fab);
         btn.setOnClickListener(new View.OnClickListener() {
