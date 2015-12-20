@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.res.Configuration;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -14,6 +15,8 @@ import android.hardware.Camera;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.Display;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.ViewGroup;
 
@@ -72,6 +75,16 @@ public class FaceKeeperCameraView extends JavaCameraView {
 
     private int displayOrientation = 0;
 
+    private static final String CAMERA_PARAM_ORIENTATION = "orientation";
+    private static final String CAMERA_PARAM_LANDSCAPE = "landscape";
+    private static final String CAMERA_PARAM_PORTRAIT = "portrait";
+    protected Activity mActivity;
+
+    protected List<Camera.Size> mPreviewSizeList;
+    protected List<Camera.Size> mPictureSizeList;
+    protected Camera.Size mPreviewSize;
+    protected Camera.Size mPictureSize;
+
     public FaceKeeperCameraView(Context context) {
         this(context, CAMERA_ID_ANY);
     }
@@ -79,6 +92,8 @@ public class FaceKeeperCameraView extends JavaCameraView {
     public FaceKeeperCameraView(Context context, int cameraId) {
         super(context, cameraId);
         mCameraIndex = cameraId;
+
+        mActivity = (Activity) context;
 
         mHolder = getHolder();
         mHolder.addCallback(this);
@@ -91,6 +106,8 @@ public class FaceKeeperCameraView extends JavaCameraView {
 
     public FaceKeeperCameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
+
+        mActivity = (Activity) context;
 
         int count = attrs.getAttributeCount();
         Log.d(TAG, "Attr count: " + Integer.valueOf(count));
@@ -113,6 +130,10 @@ public class FaceKeeperCameraView extends JavaCameraView {
      */
     public void setCameraIndex(int cameraIndex) {
         this.mCameraIndex = cameraIndex;
+    }
+
+    public boolean isPortrait() {
+        return (mActivity.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT);
     }
 
     /**
@@ -304,14 +325,15 @@ public class FaceKeeperCameraView extends JavaCameraView {
                 if (sizes != null) {
                 /* Select the size that fits surface considering maximum size allowed */
                     Size frameSize = calculateCameraFrameSize(sizes, new JavaCameraSizeAccessor(), width, height);
-                    Log.d(TAG, "[0] Set preview size to " + Integer.valueOf((int)frameSize.width) + "x" + Integer.valueOf((int)frameSize.height));
+                    Log.d(TAG, "[0] Set preview size to " + Integer.valueOf((int) frameSize.width) + "x" + Integer.valueOf((int) frameSize.height));
 
                     params.setPreviewFormat(ImageFormat.NV21);
-                    Log.d(TAG, "Set preview size to " + Integer.valueOf((int)frameSize.width) + "x" + Integer.valueOf((int)frameSize.height));
-                    params.setPreviewSize((int)frameSize.width, (int)frameSize.height);
+                    Log.d(TAG, "Set preview size to " + Integer.valueOf((int) frameSize.width) + "x" + Integer.valueOf((int) frameSize.height));
+                    params.setPreviewSize((int) frameSize.width, (int) frameSize.height);
 
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH && !android.os.Build.MODEL.equals("GT-I9100"))
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH && !android.os.Build.MODEL.equals("GT-I9100")) {
                         params.setRecordingHint(true);
+                    }
 
                     List<String> FocusModes = params.getSupportedFocusModes();
                     if (FocusModes != null && FocusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO))
@@ -323,19 +345,24 @@ public class FaceKeeperCameraView extends JavaCameraView {
                     params = mCamera.getParameters();
                     Log.d(TAG, "params=" + params.toString());
 
-                    if (displayOrientation == 90 || displayOrientation == 270) {
-                        mFrameWidth = params.getPreviewSize().width;
-                        mFrameHeight = params.getPreviewSize().height;
-                    } else {
+                    if (isPortrait()) {
                         mFrameWidth = params.getPreviewSize().height;
                         mFrameHeight = params.getPreviewSize().width;
+                    } else {
+                        mFrameWidth = params.getPreviewSize().width;
+                        mFrameHeight = params.getPreviewSize().height;
                     }
+
+//                    configureCameraParameters(params, isPortrait());
+                    params.setPreviewSize(mFrameWidth, mFrameHeight);
+                    params.setPictureSize(mFrameWidth, mFrameHeight);
 
                     if ((getLayoutParams().width == ViewGroup.LayoutParams.MATCH_PARENT) && (getLayoutParams().height == ViewGroup.LayoutParams.MATCH_PARENT)) {
                         mScale = Math.min(((float) height) / mFrameHeight, ((float) width) / mFrameWidth);
                         mScale = Math.max(((float) height) / mFrameHeight, ((float) width) / mFrameWidth);
-                    } else
+                    } else {
                         mScale = 0;
+                    }
 
                     if (mFpsMeter != null) {
                         mFpsMeter.setResolution(mFrameWidth, mFrameHeight);
@@ -366,8 +393,10 @@ public class FaceKeeperCameraView extends JavaCameraView {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
                         mSurfaceTexture = new SurfaceTexture(MAGIC_TEXTURE_ID);
                         mCamera.setPreviewTexture(mSurfaceTexture);
-                    } else
+                    } else {
                         mCamera.setPreviewDisplay(null);
+                    }
+
 
                 /* Finally we are ready to start the preview */
                     Log.d(TAG, "startPreview");
@@ -595,6 +624,10 @@ public class FaceKeeperCameraView extends JavaCameraView {
 
         // start preview with new settings
         try {
+            Camera.Parameters cameraParams = mCamera.getParameters();
+            boolean portrait = isPortrait();
+            configureCameraParameters(cameraParams, portrait);
+
             mCamera.setPreviewDisplay(mHolder);
             mCamera.startPreview();
 
@@ -617,6 +650,54 @@ public class FaceKeeperCameraView extends JavaCameraView {
                 checkCurrentState();
             }
         }
+    }
+
+    public void onPause() {
+        if (null == mCamera) {
+            return;
+        }
+        mCamera.stopPreview();
+        mCamera.release();
+        mCamera = null;
+    }
+
+    protected void configureCameraParameters(Camera.Parameters cameraParams, boolean portrait) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.FROYO) { // for 2.1 and before
+            if (portrait) {
+                cameraParams.set(CAMERA_PARAM_ORIENTATION, CAMERA_PARAM_PORTRAIT);
+            } else {
+                cameraParams.set(CAMERA_PARAM_ORIENTATION, CAMERA_PARAM_LANDSCAPE);
+            }
+        } else { // for 2.2 and later
+            int angle;
+            Display display = mActivity.getWindowManager().getDefaultDisplay();
+            switch (display.getRotation()) {
+                case Surface.ROTATION_0: // This is display orientation
+                    angle = 90; // This is camera orientation
+                    break;
+                case Surface.ROTATION_90:
+                    angle = 0;
+                    break;
+                case Surface.ROTATION_180:
+                    angle = 270;
+                    break;
+                case Surface.ROTATION_270:
+                    angle = 180;
+                    break;
+                default:
+                    angle = 90;
+                    break;
+            }
+            Log.v(TAG, "angle: " + angle);
+            mCamera.setDisplayOrientation(angle);
+        }
+
+//        cameraParams.setPreviewSize(mPreviewSize.width, mPreviewSize.height);
+//        cameraParams.setPictureSize(mPictureSize.width, mPictureSize.height);
+        Log.d(TAG, "Preview Actual Size - w: " + mPreviewSize.width + ", h: " + mPreviewSize.height);
+        Log.d(TAG, "Picture Actual Size - w: " + mPictureSize.width + ", h: " + mPictureSize.height);
+
+        mCamera.setParameters(cameraParams);
     }
 
     /**
